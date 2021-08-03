@@ -64,3 +64,4 @@ images/**
 .config
 notes/**
 .vscode/**
+go.mod
