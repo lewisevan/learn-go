@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/lewismevan/learn-go/views"
@@ -21,8 +22,20 @@ func NewUsers() *Users {
 	}
 }
 
+/*
+ * GET /signup
+ * Renders the signup page for a new user.
+ */
 func (u *Users) New(w http.ResponseWriter, r *http.Request) {
 	if err := u.NewView.Render(w, nil); err != nil {
 		panic(err)
 	}
+}
+
+/*
+ * POST /signup
+ * Processes the signup form data and creates a new user account.
+ */
+func (u *Users) Create(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintln(w, "This is a temporary response.")
 }
