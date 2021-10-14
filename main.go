@@ -5,16 +5,22 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/lewismevan/learn-go/views"
+)
+
+var (
+	homeView    *views.View
+	contactView *views.View
 )
 
 func home(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html")
-	fmt.Fprint(w, "<h1>Welcome to my awesome site!</h1>")
+	must(homeView.Render(w, nil))
 }
 
 func contact(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html")
-	fmt.Fprint(w, "To get in touch, please send an email to <a href=\"mailto:support@lenslocked.com\">support@lenslocked.com</a>.")
+	must(contactView.Render(w, nil))
 }
 
 func notFound(w http.ResponseWriter, r *http.Request) {
@@ -24,9 +30,18 @@ func notFound(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+	homeView = views.NewView("bootstrap", "views/home.gohtml")
+	contactView = views.NewView("bootstrap", "views/contact.gohtml")
+
 	r := mux.NewRouter()
 	r.NotFoundHandler = http.HandlerFunc(notFound)
 	r.HandleFunc("/", home)
 	r.HandleFunc("/contact", contact)
 	http.ListenAndServe("localhost:3000", r)
+}
+
+func must(err error) {
+	if err != nil {
+		panic(err)
+	}
 }
