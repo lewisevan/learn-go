@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/gorilla/schema"
 	"github.com/lewismevan/learn-go/views"
 )
 
@@ -43,14 +42,8 @@ type SignupForm struct {
  * Processes the signup form data and creates a new user account.
  */
 func (u *Users) Create(w http.ResponseWriter, r *http.Request) {
-	if err := r.ParseForm(); err != nil {
-		panic(err)
-	}
-
-	dec := schema.NewDecoder()
 	var form SignupForm
-
-	if err := dec.Decode(&form, r.PostForm); err != nil {
+	if err := parseForm(r, &form); err != nil {
 		panic(err)
 	}
 	fmt.Fprintln(w, form)
