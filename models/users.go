@@ -63,3 +63,11 @@ func (us *UserService) ById(id uint) (*User, error) {
 		return nil, err
 	}
 }
+
+/*
+ * Creates a new DB record for the provided User object, and will
+ * backfill the gorm.Model fields
+ */
+func (us *UserService) Create(user *User) error {
+	return us.db.Create(user).Error
+}
