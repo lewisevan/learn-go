@@ -71,3 +71,11 @@ func (us *UserService) ById(id uint) (*User, error) {
 func (us *UserService) Create(user *User) error {
 	return us.db.Create(user).Error
 }
+
+/*
+ * Updates a user DB record with the data in the provided user object.
+ * The user is found by ID, and all fields are updated.
+ */
+func (us *UserService) Update(user *User) error {
+	return us.db.Save(user).Error
+}
