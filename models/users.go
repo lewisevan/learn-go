@@ -8,7 +8,8 @@ import (
 )
 
 var (
-	ErrNotFound = errors.New("models: resource not found")
+	ErrNotFound  = errors.New("models: resource not found")
+	ErrInvalidID = errors.New("models: ID provided was invalid")
 )
 
 type UserService struct {
@@ -52,16 +53,9 @@ func (us *UserService) DestructiveReset() {
  */
 func (us *UserService) ById(id uint) (*User, error) {
 	var user User
-	err := us.db.Where("id = ?", id).First(&user).Error
-
-	switch err {
-	case nil:
-		return &user, nil
-	case gorm.ErrRecordNotFound:
-		return nil, ErrNotFound
-	default:
-		return nil, err
-	}
+	db := us.db.Where("id = ?", id)
+	err := first(db, &user)
+	return &user, err
 }
 
 /*
@@ -70,15 +64,9 @@ func (us *UserService) ById(id uint) (*User, error) {
  */
 func (us *UserService) ByEmail(email string) (*User, error) {
 	var user User
-	err := us.db.Where("email = ?", email).First(&user).Error
-	switch err {
-	case nil:
-		return &user, nil
-	case gorm.ErrRecordNotFound:
-		return nil, ErrNotFound
-	default:
-		return nil, err
-	}
+	db := us.db.Where("email = ?", email)
+	err := first(db, &user)
+	return &user, err
 }
 
 /*
@@ -95,4 +83,32 @@ func (us *UserService) Create(user *User) error {
  */
 func (us *UserService) Update(user *User) error {
 	return us.db.Save(user).Error
+}
+
+/*
+ * Deletes the user DB record associated with the provided user ID.
+ */
+func (us *UserService) Delete(id uint) error {
+	if id == 0 {
+		return ErrInvalidID
+	}
+	user := User{
+		Model: gorm.Model{
+			ID: id,
+		},
+	}
+	return us.db.Delete(&user).Error
+}
+
+/*
+ * Queries the given DB and gets the first item in the resulting DB rows.
+ * The row is parsed into the provided destination object pointer, which
+ * can then be used by the caller to access the queried row.
+ */
+func first(db *gorm.DB, dst interface{}) error {
+	err := db.First(dst).Error
+	if err == gorm.ErrRecordNotFound {
+		return ErrNotFound
+	}
+	return err
 }
