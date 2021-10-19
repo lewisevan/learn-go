@@ -65,6 +65,23 @@ func (us *UserService) ById(id uint) (*User, error) {
 }
 
 /*
+ * Looks up a user given their email address. Returns a user
+ * object representing the user.
+ */
+func (us *UserService) ByEmail(email string) (*User, error) {
+	var user User
+	err := us.db.Where("email = ?", email).First(&user).Error
+	switch err {
+	case nil:
+		return &user, nil
+	case gorm.ErrRecordNotFound:
+		return nil, ErrNotFound
+	default:
+		return nil, err
+	}
+}
+
+/*
  * Creates a new DB record for the provided User object, and will
  * backfill the gorm.Model fields
  */
