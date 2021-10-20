@@ -1,16 +1,34 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/gorilla/mux"
 	"github.com/lewismevan/learn-go/controllers"
+	"github.com/lewismevan/learn-go/models"
+)
+
+const (
+	host     = "localhost"
+	port     = 5432
+	user     = "postgres"
+	password = "postgres"
+	dbname   = "lenslocked_dev"
 )
 
 func main() {
+	// Model services
+	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable", host, port, user, password, dbname)
+
+	us, err := models.NewUserService(psqlInfo)
+	must(err)
+	defer us.Close()
+	us.AutoMigrate()
+
 	// Controllers
 	staticC := controllers.NewStatic()
-	usersC := controllers.NewUsers()
+	usersC := controllers.NewUsers(us)
 
 	// Create server
 	r := mux.NewRouter()
