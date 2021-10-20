@@ -9,9 +9,7 @@ type Static struct {
 	Contact *views.View
 }
 
-/*
- * Creates a new Static controller for serving static pages.
- */
+// Creates a new Static controller for serving static pages.
 func NewStatic() *Static {
 	return &Static{
 		Home:    views.NewView("bootstrap", "static/home"),

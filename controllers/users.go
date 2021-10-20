@@ -14,11 +14,9 @@ type Users struct {
 	us        *models.UserService
 }
 
-/*
- * Creates a new Users controller. This function should only
- * be used during setup, since it will panic if a template
- * cannot be parsed correctly.
- */
+// Creates a new Users controller. This function should only
+// be used during setup, since it will panic if a template
+// cannot be parsed correctly.
 func NewUsers(us *models.UserService) *Users {
 	return &Users{
 		NewView:   views.NewView("bootstrap", "users/new"),
@@ -33,10 +31,8 @@ type SignupForm struct {
 	Password string `schema:"password"`
 }
 
-/*
- * POST /signup
- * Processes the signup form data and creates a new user account.
- */
+// POST /signup
+// Processes the signup form data and creates a new user account.
 func (u *Users) Create(w http.ResponseWriter, r *http.Request) {
 	var form SignupForm
 	if err := parseForm(r, &form); err != nil {
@@ -61,11 +57,9 @@ type LoginForm struct {
 	Password string `schema:"password"`
 }
 
-/*
- * POST /login
- * Verifies the provided email address and password, and then
- * logs in the user if they are correct.
- */
+// POST /login
+// Verifies the provided email address and password, and then
+// logs in the user if they are correct.
 func (u *Users) Login(w http.ResponseWriter, r *http.Request) {
 	form := LoginForm{}
 	if err := parseForm(r, &form); err != nil {
