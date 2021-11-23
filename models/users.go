@@ -19,6 +19,20 @@ var (
 const userPwPepper = "secret-pw-pepper"
 const hmacSecretKey = "secret-hmac-key"
 
+// Ensures types adhere to UserDB interface
+var _ UserDB = &userGorm{}
+var _ UserDB = userValidator{}
+
+type User struct {
+	gorm.Model
+	Name         string
+	Email        string `gorm:"not null;unique_index"`
+	Password     string `gorm:"-"`
+	PasswordHash string `gorm:"not null"`
+	Remember     string `gorm:"-"`
+	RememberHash string `gorm:"not null;unique_index"`
+}
+
 // A set of methods used to manipulate and work with the user model
 type UserService interface {
 	// Verifies the provided email and password are correct.
@@ -36,14 +50,42 @@ type userService struct {
 	UserDB
 }
 
-type User struct {
-	gorm.Model
-	Name         string
-	Email        string `gorm:"not null;unique_index"`
-	Password     string `gorm:"-"`
-	PasswordHash string `gorm:"not null"`
-	Remember     string `gorm:"-"`
-	RememberHash string `gorm:"not null;unique_index"`
+func NewUserService(connectionInfo string) (UserService, error) {
+	ug, err := newUserGorm(connectionInfo)
+	if err != nil {
+		return nil, err
+	}
+
+	return &userService{
+		UserDB: &userValidator{
+			UserDB: ug,
+		},
+	}, err
+}
+
+// Accepts an email address and password and determines whether both
+// correctly map to a user.
+func (us *userService) Authenticate(email string, password string) (*User, error) {
+	foundUser, err := us.ByEmail(email)
+	if err != nil {
+		return nil, err
+	}
+
+	err = bcrypt.CompareHashAndPassword([]byte(foundUser.PasswordHash), []byte(password+userPwPepper))
+	if err != nil {
+		switch err {
+		case bcrypt.ErrMismatchedHashAndPassword:
+			return nil, ErrInvalidPassword
+		default:
+			return nil, err
+		}
+	}
+
+	return foundUser, nil
+}
+
+type userValidator struct {
+	UserDB
 }
 
 type UserDB interface {
@@ -65,29 +107,9 @@ type UserDB interface {
 	DestructiveReset() error
 }
 
-// Ensures userGorm adheres to UserDB interface
-var _ UserDB = &userGorm{}
-
 type userGorm struct {
 	db   *gorm.DB
 	hmac hash.HMAC
-}
-
-type userValidator struct {
-	UserDB
-}
-
-func NewUserService(connectionInfo string) (UserService, error) {
-	ug, err := newUserGorm(connectionInfo)
-	if err != nil {
-		return nil, err
-	}
-
-	return &userService{
-		UserDB: &userValidator{
-			UserDB: ug,
-		},
-	}, err
 }
 
 func newUserGorm(connectionInfo string) (*userGorm, error) {
@@ -151,27 +173,6 @@ func (ug *userGorm) ByRemember(token string) (*User, error) {
 	db := ug.db.Where("remember_hash = ?", hashedToken)
 	err := first(db, &user)
 	return &user, err
-}
-
-// Accepts an email address and password and determines whether both
-// correctly map to a user.
-func (us *userService) Authenticate(email string, password string) (*User, error) {
-	foundUser, err := us.ByEmail(email)
-	if err != nil {
-		return nil, err
-	}
-
-	err = bcrypt.CompareHashAndPassword([]byte(foundUser.PasswordHash), []byte(password+userPwPepper))
-	if err != nil {
-		switch err {
-		case bcrypt.ErrMismatchedHashAndPassword:
-			return nil, ErrInvalidPassword
-		default:
-			return nil, err
-		}
-	}
-
-	return foundUser, nil
 }
 
 // Creates a new DB record for the provided User object, and will
