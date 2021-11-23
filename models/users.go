@@ -19,7 +19,20 @@ var (
 const userPwPepper = "secret-pw-pepper"
 const hmacSecretKey = "secret-hmac-key"
 
-type UserService struct {
+// A set of methods used to manipulate and work with the user model
+type UserService interface {
+	// Verifies the provided email and password are correct.
+	// If they are correct, the user corresponding to the email
+	// will be returned. Otherwise, you will receive an
+	// ErrNotFound, ErrInvalidPassword, or another error if something
+	// unexpcted goes wrong
+	Authenticate(email, password string) (*User, error)
+
+	UserDB
+}
+
+// The implementation of the UserService interface
+type userService struct {
 	UserDB
 }
 
@@ -64,13 +77,13 @@ type userValidator struct {
 	UserDB
 }
 
-func NewUserService(connectionInfo string) (*UserService, error) {
+func NewUserService(connectionInfo string) (UserService, error) {
 	ug, err := newUserGorm(connectionInfo)
 	if err != nil {
 		return nil, err
 	}
 
-	return &UserService{
+	return &userService{
 		UserDB: &userValidator{
 			UserDB: ug,
 		},
@@ -142,7 +155,7 @@ func (ug *userGorm) ByRemember(token string) (*User, error) {
 
 // Accepts an email address and password and determines whether both
 // correctly map to a user.
-func (us *UserService) Authenticate(email string, password string) (*User, error) {
+func (us *userService) Authenticate(email string, password string) (*User, error) {
 	foundUser, err := us.ByEmail(email)
 	if err != nil {
 		return nil, err
